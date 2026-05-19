@@ -2,32 +2,38 @@ import os
 import time
 import random
 import requests
+import json
 
-used_quotes = set()
+# ===== ملف حفظ العبارات لمنع التكرار حتى بعد إعادة التشغيل =====
+SEEN_FILE = "used_quotes.json"
 
+def load_seen():
+    try:
+        with open(SEEN_FILE, "r", encoding="utf-8") as f:
+            return set(json.load(f))
+    except:
+        return set()
+
+def save_seen(data):
+    with open(SEEN_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(data), f, ensure_ascii=False)
+
+used_quotes = load_seen()
+
+
+# ===== مصادر كثيرة جدًا =====
 APIS = [
     "https://api.quotable.io/random",
     "https://api.quotable.io/random?tags=life",
     "https://api.quotable.io/random?tags=wisdom",
     "https://api.quotable.io/random?tags=inspirational",
-    "https://zenquotes.io/api/random"
+    "https://api.quotable.io/random?tags=love",
+    "https://zenquotes.io/api/random",
+    "https://zenquotes.io/api/random",
 ]
+
 
 EMO = ["🖤", "🌙", "✨", "🤍"]
-
-FOOTER = [
-    "\n\n🖤 لو الكلام لمسّك، شاركه.",
-    "\n\n✨ يمكن غيرك محتاجه.",
-    "\n\n🌙 بعض الكلام مش بيتقال مرتين.",
-    "\n\n🤍 لو فهمت، أنت مش لوحدك."
-]
-
-BLOCKED = ["doctor", "medical", "health", "مرض", "طبيب", "علاج"]
-
-
-def is_valid(text):
-    t = text.lower()
-    return not any(w in t for w in BLOCKED)
 
 
 def translate(text):
@@ -48,68 +54,45 @@ def translate(text):
     return None
 
 
-def extract(api, data):
-    if "quotable.io" in api:
-        return data.get("content")
-    if "zenquotes" in api:
-        return data[0].get("q")
-    return None
+def get_from_api():
 
-
-def get_quote():
-
-    for _ in range(10):
+    for _ in range(20):  # محاولات كتير عشان يجيب حاجة جديدة
 
         api = random.choice(APIS)
 
         try:
             r = requests.get(api, timeout=10)
-
             if r.status_code != 200:
                 continue
 
             data = r.json()
-            text = extract(api, data)
+
+            # استخراج النص
+            if "content" in str(data):
+                text = data.get("content")
+            elif isinstance(data, list):
+                text = data[0].get("q")
+            else:
+                continue
 
             if not text:
                 continue
 
-            if not is_valid(text):
-                continue
-
             arabic = translate(text) or text
 
-            if not is_valid(arabic):
-                continue
-
-            # منع التكرار
+            # منع التكرار الحقيقي
             if arabic in used_quotes:
                 continue
 
             used_quotes.add(arabic)
+            save_seen(used_quotes)
 
-            return arabic
+            return f"{random.choice(EMO)} {arabic}"
 
         except:
             continue
 
-    # fallback ستايل مشاعر
-    fallback = [
-        "فيه حاجات بنحسها ومش بنعرف نقولها.",
-        "الهدوء اللي جواك مش دايمًا راحة… أحيانًا تعب.",
-        "مش كل اللي ساكت قوي، أحيانًا هو بس مستسلم.",
-        "بعض المشاعر مش بتخف… بس بنتعود عليها."
-    ]
-
-    return random.choice(fallback)
-
-
-def build_post():
-
-    emoji = random.choice(EMO)
-    quote = get_quote()
-
-    return f"{emoji} {quote}" + random.choice(FOOTER)
+    return None
 
 
 def send_to_telegram():
@@ -123,13 +106,13 @@ def send_to_telegram():
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
-    payload = {
-        "chat_id": chat_id,
-        "text": build_post()
-    }
+    text = get_from_api()
+
+    if not text:
+        text = "🖤 أحيانًا الصمت هو كل ما نحتاجه."
 
     try:
-        requests.post(url, data=payload, timeout=10)
+        requests.post(url, data={"chat_id": chat_id, "text": text}, timeout=10)
         print("Sent ✔")
 
     except Exception as e:
@@ -139,8 +122,5 @@ def send_to_telegram():
 if __name__ == "__main__":
 
     while True:
-
         send_to_telegram()
-
-        # ⏱️ من 5 إلى 10 دقائق عشوائي
-        time.sleep(random.randint(300, 600))
+        time.sleep(random.randint(300, 600))  # 5–10 دقائق
