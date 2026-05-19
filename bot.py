@@ -22,6 +22,16 @@ APIS = [
     "https://zenquotes.io/api/random"
 ]
 
+# 🔥 بوستات فيروسيه جاهزة (تشد الانتباه وتنتشر)
+VIRAL_POSTS = [
+    "أخطر شيء في الحياة أن تتعود على الألم وتظنه طبيعيًا.",
+    "لا أحد يخبرك أن بعض النهايات تبدأ من الداخل أولًا.",
+    "تظن أنك قوي… حتى تواجه نفسك وحدك.",
+    "هناك نسخ منك ماتت بصمت ولم يلاحظها أحد.",
+    "أسوأ شعور أن تتغير دون أن يشعر بك أحد.",
+    "كل شيء واضح… إلا ما يحدث داخلك."
+]
+
 
 def translate(text):
     try:
@@ -51,6 +61,11 @@ def extract(api, data):
 
 def get_quote():
 
+    # 🔥 30% بوستات فيروسيه
+    if random.random() < 0.3:
+        return random.choice(VIRAL_POSTS)
+
+    # 🌐 باقي الوقت من API
     for _ in range(15):
 
         api = random.choice(APIS)
@@ -82,24 +97,38 @@ def get_quote():
     return "الصمت أبلغ من الكلام أحيانًا."
 
 
+# 🎨 فريمات احترافية (تجذب الانتباه)
 def format_post(text):
 
     author = random.choice(AUTHORS)
 
-    return f"""- لم تُقال بعد ، اقتباسات حب ، خواطر .:
-- {text}
+    frames = [
 
-- {author}"""
+f"""━━━━━━━━━━━━━━
+✨ لم تُقال بعد ✨
+━━━━━━━━━━━━━━
+
+{text}
+
+━━━━━━━━━━━━━━
+{author}
+━━━━━━━━━━━━━━""",
+
+f"""❖━━━━━━ لم تُقال بعد ━━━━━━❖
+
+{text}
+
+❖━━━━━━━━━━━━━━❖
+{author}"""
+    ]
+
+    return random.choice(frames)
 
 
 def send():
 
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
-
-    if not token or not chat_id:
-        print("Missing env vars")
-        return
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
