@@ -5,28 +5,45 @@ import requests
 
 used_quotes = set()
 
-# ====== 5 APIs اقتباسات ======
-QUOTE_APIS = [
+# ====== 5 APIs اقتباسات حب ======
+LOVE_APIS = [
+    "https://api.quotable.io/random?tags=love",
+    "https://api.quotable.io/random?tags=romance",
     "https://api.quotable.io/random",
     "https://zenquotes.io/api/random",
-    "https://api.adviceslip.com/advice",
-    "https://api.quotable.io/random?tags=wisdom",
-    "https://api.quotable.io/random?tags=inspirational"
+    "https://api.quotable.io/random?tags=life"
 ]
 
-# ====== عبارات واتساب ستايل ======
-WHATSAPP_STYLE = [
-    "✨ الهدوء اللي وصلتله بعد كل اللي عديت بيه يستحق الاحترام.",
-    "🖤 مش كل حاجة تستاهل رد.",
-    "⚡ الراحة النفسية أهم من أي حاجة.",
-    "🌙 اتعلمت أمشي لوحدي من غير ما أندم.",
-    "🔥 في ناس وجودهم درس مش راحة.",
-    "🤍 اختار نفسك حتى لو الكل عكسك.",
-    "✨ السكوت أحيانًا أذكى قرار.",
-    "🖤 مش لازم تشرح نفسك دايمًا.",
-    "⚡ كل واحد شايل اللي محدش شايفه.",
-    "🌙 الوجع بيعلمك تبقى أقوى."
+# ====== 5 APIs عبارات قوية ======
+STRONG_APIS = [
+    "https://api.quotable.io/random?tags=wisdom",
+    "https://api.quotable.io/random?tags=inspirational",
+    "https://api.quotable.io/random?tags=famous-quotes",
+    "https://api.quotable.io/random?tags=success",
+    "https://api.quotable.io/random"
 ]
+
+# ====== واتساب ستايل ======
+WHATSAPP_STYLE = [
+    "✨ في ناس وجودهم راحة مش تفسير.",
+    "🖤 الحب الحقيقي مبيقلش مهما بعدنا.",
+    "⚡ القوة إنك تكمل حتى لو لوحدك.",
+    "🤍 اللي بيحبك بجد بيفضل ثابت.",
+    "🌙 بعض القلوب مش بتتنسى.",
+    "🔥 الكرامة أهم من أي شعور.",
+    "✨ مش كل حب بيكمل، بس كل حب بيعلم.",
+    "🖤 أحيانًا البعد بيكون إنقاذ.",
+    "⚡ القوة مش في الكلام.. القوة في الصمت.",
+    "🤍 بعض الناس وجودهم أمان مش صدفة."
+]
+
+# ====== فلترة ======
+BLOCKED = ["doctor", "medical", "health", "disease", "مرض", "طبيب", "علاج"]
+
+
+def is_valid(text):
+    t = text.lower()
+    return not any(w in t for w in BLOCKED)
 
 
 def translate(text):
@@ -39,33 +56,30 @@ def translate(text):
             "dt": "t",
             "q": text
         }
+
         r = requests.get(url, params=params, timeout=10)
         if r.status_code == 200:
             return r.json()[0][0][0]
+
     except:
         pass
+
     return None
 
 
-def extract_quote(api, data):
-
+def extract(api, data):
     if "quotable.io" in api:
         return data.get("content")
-
     if "zenquotes" in api:
         return data[0].get("q")
-
-    if "adviceslip" in api:
-        return data["slip"]["advice"]
-
     return None
 
 
-def get_api_quote():
+def get_api_quote(api_list):
 
     for _ in range(10):
 
-        api = random.choice(QUOTE_APIS)
+        api = random.choice(api_list)
 
         try:
             r = requests.get(api, timeout=10)
@@ -74,12 +88,18 @@ def get_api_quote():
                 continue
 
             data = r.json()
-            text = extract_quote(api, data)
+            text = extract(api, data)
 
             if not text:
                 continue
 
+            if not is_valid(text):
+                continue
+
             arabic = translate(text) or text
+
+            if not is_valid(arabic):
+                continue
 
             if arabic in used_quotes:
                 continue
@@ -94,36 +114,31 @@ def get_api_quote():
     return None
 
 
-def get_whatsapp_quote():
+def get_post():
 
-    remaining = list(set(WHATSAPP_STYLE) - used_quotes)
+    mode = random.random()
 
-    if not remaining:
-        used_quotes.clear()
-        remaining = WHATSAPP_STYLE.copy()
+    # 40% حب
+    if mode < 0.4:
+        quote = get_api_quote(LOVE_APIS)
+        if quote:
+            return quote
 
-    quote = random.choice(remaining)
+    # 40% قوة
+    elif mode < 0.8:
+        quote = get_api_quote(STRONG_APIS)
+        if quote:
+            return quote
+
+    # 20% واتساب ستايل
+    quote = random.choice(WHATSAPP_STYLE)
+
+    if quote in used_quotes:
+        return random.choice(WHATSAPP_STYLE)
 
     used_quotes.add(quote)
 
     return quote
-
-
-def get_post():
-
-    # توزيع ذكي:
-    # 60% واتساب ستايل
-    # 40% اقتباسات من API
-
-    if random.random() < 0.6:
-        return get_whatsapp_quote()
-
-    api_quote = get_api_quote()
-
-    if api_quote:
-        return api_quote
-
-    return get_whatsapp_quote()
 
 
 def send_to_telegram():
@@ -150,9 +165,8 @@ def send_to_telegram():
         print("Error:", e)
 
 
-# ====== تشغيل كل دقيقة ======
 if __name__ == "__main__":
 
     while True:
         send_to_telegram()
-        time.sleep(60)  # كل دقيقة
+        time.sleep(60)
