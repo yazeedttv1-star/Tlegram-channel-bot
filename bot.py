@@ -5,40 +5,24 @@ import requests
 
 used_quotes = set()
 
-# ====== 5 APIs اقتباسات حب ======
-LOVE_APIS = [
-    "https://api.quotable.io/random?tags=love",
-    "https://api.quotable.io/random?tags=romance",
+APIS = [
     "https://api.quotable.io/random",
-    "https://zenquotes.io/api/random",
-    "https://api.quotable.io/random?tags=life"
-]
-
-# ====== 5 APIs عبارات قوية ======
-STRONG_APIS = [
+    "https://api.quotable.io/random?tags=life",
     "https://api.quotable.io/random?tags=wisdom",
     "https://api.quotable.io/random?tags=inspirational",
-    "https://api.quotable.io/random?tags=famous-quotes",
-    "https://api.quotable.io/random?tags=success",
-    "https://api.quotable.io/random"
+    "https://zenquotes.io/api/random"
 ]
 
-# ====== واتساب ستايل ======
-WHATSAPP_STYLE = [
-    "✨ في ناس وجودهم راحة مش تفسير.",
-    "🖤 الحب الحقيقي مبيقلش مهما بعدنا.",
-    "⚡ القوة إنك تكمل حتى لو لوحدك.",
-    "🤍 اللي بيحبك بجد بيفضل ثابت.",
-    "🌙 بعض القلوب مش بتتنسى.",
-    "🔥 الكرامة أهم من أي شعور.",
-    "✨ مش كل حب بيكمل، بس كل حب بيعلم.",
-    "🖤 أحيانًا البعد بيكون إنقاذ.",
-    "⚡ القوة مش في الكلام.. القوة في الصمت.",
-    "🤍 بعض الناس وجودهم أمان مش صدفة."
+EMO = ["🖤", "🌙", "✨", "🤍"]
+
+FOOTER = [
+    "\n\n🖤 لو الكلام لمسّك، شاركه.",
+    "\n\n✨ يمكن غيرك محتاجه.",
+    "\n\n🌙 بعض الكلام مش بيتقال مرتين.",
+    "\n\n🤍 لو فهمت، أنت مش لوحدك."
 ]
 
-# ====== فلترة ======
-BLOCKED = ["doctor", "medical", "health", "disease", "مرض", "طبيب", "علاج"]
+BLOCKED = ["doctor", "medical", "health", "مرض", "طبيب", "علاج"]
 
 
 def is_valid(text):
@@ -56,14 +40,11 @@ def translate(text):
             "dt": "t",
             "q": text
         }
-
         r = requests.get(url, params=params, timeout=10)
         if r.status_code == 200:
             return r.json()[0][0][0]
-
     except:
         pass
-
     return None
 
 
@@ -75,11 +56,11 @@ def extract(api, data):
     return None
 
 
-def get_api_quote(api_list):
+def get_quote():
 
     for _ in range(10):
 
-        api = random.choice(api_list)
+        api = random.choice(APIS)
 
         try:
             r = requests.get(api, timeout=10)
@@ -101,44 +82,34 @@ def get_api_quote(api_list):
             if not is_valid(arabic):
                 continue
 
+            # منع التكرار
             if arabic in used_quotes:
                 continue
 
             used_quotes.add(arabic)
 
-            return f"✨ {arabic}"
+            return arabic
 
         except:
             continue
 
-    return None
+    # fallback ستايل مشاعر
+    fallback = [
+        "فيه حاجات بنحسها ومش بنعرف نقولها.",
+        "الهدوء اللي جواك مش دايمًا راحة… أحيانًا تعب.",
+        "مش كل اللي ساكت قوي، أحيانًا هو بس مستسلم.",
+        "بعض المشاعر مش بتخف… بس بنتعود عليها."
+    ]
+
+    return random.choice(fallback)
 
 
-def get_post():
+def build_post():
 
-    mode = random.random()
+    emoji = random.choice(EMO)
+    quote = get_quote()
 
-    # 40% حب
-    if mode < 0.4:
-        quote = get_api_quote(LOVE_APIS)
-        if quote:
-            return quote
-
-    # 40% قوة
-    elif mode < 0.8:
-        quote = get_api_quote(STRONG_APIS)
-        if quote:
-            return quote
-
-    # 20% واتساب ستايل
-    quote = random.choice(WHATSAPP_STYLE)
-
-    if quote in used_quotes:
-        return random.choice(WHATSAPP_STYLE)
-
-    used_quotes.add(quote)
-
-    return quote
+    return f"{emoji} {quote}" + random.choice(FOOTER)
 
 
 def send_to_telegram():
@@ -154,12 +125,12 @@ def send_to_telegram():
 
     payload = {
         "chat_id": chat_id,
-        "text": get_post()
+        "text": build_post()
     }
 
     try:
         requests.post(url, data=payload, timeout=10)
-        print("✔ Sent")
+        print("Sent ✔")
 
     except Exception as e:
         print("Error:", e)
@@ -168,5 +139,8 @@ def send_to_telegram():
 if __name__ == "__main__":
 
     while True:
+
         send_to_telegram()
-        time.sleep(60)
+
+        # ⏱️ من 5 إلى 10 دقائق عشوائي
+        time.sleep(random.randint(300, 600))
