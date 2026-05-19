@@ -2,8 +2,21 @@ import os
 import time
 import random
 import requests
+from collections import deque, defaultdict
 
-used = set()
+# ======================
+# 🧠 Memory System
+# ======================
+
+used = deque(maxlen=400)
+post_counter = 0
+
+# 📊 محاكاة التفاعل الحقيقي
+stats = {
+    "viral": {"sent": 0, "score": 1.0},
+    "ai": {"sent": 0, "score": 1.0},
+    "api": {"sent": 0, "score": 1.0}
+}
 
 AUTHORS = [
     "دوستويفسكي 📚",
@@ -18,132 +31,213 @@ APIS = [
     "https://api.quotable.io/random",
     "https://api.quotable.io/random?tags=wisdom",
     "https://api.quotable.io/random?tags=life",
-    "https://api.quotable.io/random?tags=inspirational",
-    "https://zenquotes.io/api/random"
+    "https://api.quotable.io/random?tags=inspirational"
 ]
 
-# 🔥 بوستات فيروسيه جاهزة (تشد الانتباه وتنتشر)
 VIRAL_POSTS = [
-    "أخطر شيء في الحياة أن تتعود على الألم وتظنه طبيعيًا.",
-    "لا أحد يخبرك أن بعض النهايات تبدأ من الداخل أولًا.",
-    "تظن أنك قوي… حتى تواجه نفسك وحدك.",
+    "أخطر ما في الحياة أنك تعتاد الألم وتظنه طبيعيًا.",
     "هناك نسخ منك ماتت بصمت ولم يلاحظها أحد.",
     "أسوأ شعور أن تتغير دون أن يشعر بك أحد.",
-    "كل شيء واضح… إلا ما يحدث داخلك."
+    "كل شيء واضح إلا ما يحدث داخلك.",
+    "بعض النهايات تبدأ من الداخل دون أن نشعر."
 ]
 
 
-def translate(text):
-    try:
-        url = "https://translate.googleapis.com/translate_a/single"
-        params = {
-            "client": "gtx",
-            "sl": "en",
-            "tl": "ar",
-            "dt": "t",
-            "q": text
-        }
-        r = requests.get(url, params=params, timeout=10)
-        if r.status_code == 200:
-            return r.json()[0][0][0]
-    except:
-        pass
-    return None
+# ======================
+# 🤖 توليد عربي احترافي
+# ======================
 
+def generate_thought():
+
+    subjects = ["الصمت", "الخذلان", "الحنين", "الوحدة", "الألم", "الغياب"]
+
+    templates = [
+        "لم أعد أبحث عن {} بل عن نفسي التي فقدتها أثناء الطريق.",
+        "كل ما تبقى من {} هو أثر لا يُرى.",
+        "{} علّمني أن الصمت أحيانًا أبلغ من كل شيء.",
+        "تغيّرت نظرتي إلى {} دون أن أشعر.",
+        "لم يعد {} يعني لي ما كان يعنيه من قبل."
+    ]
+
+    return random.choice(templates).format(random.choice(subjects))
+
+
+# ======================
+# 🌐 API
+# ======================
 
 def extract(api, data):
     if "quotable.io" in api:
         return data.get("content")
-    if "zenquotes" in api:
-        return data[0].get("q")
     return None
 
 
-def get_quote():
+def translate(text):
+    try:
+        r = requests.get(
+            "https://translate.googleapis.com/translate_a/single",
+            params={
+                "client": "gtx",
+                "sl": "en",
+                "tl": "ar",
+                "dt": "t",
+                "q": text
+            },
+            timeout=10
+        )
+        return r.json()[0][0][0]
+    except:
+        return None
 
-    # 🔥 30% بوستات فيروسيه
-    if random.random() < 0.3:
-        return random.choice(VIRAL_POSTS)
 
-    # 🌐 باقي الوقت من API
-    for _ in range(15):
+# ======================
+# 📊 تقييم الأداء (Fake Engagement Engine)
+# ======================
+
+def update_stats(content_type):
+
+    # نحاكي التفاعل (زي مشاهدات/حفظ/مشاركة)
+    fake_engagement = random.uniform(0.5, 1.5)
+
+    stats[content_type]["sent"] += 1
+    stats[content_type]["score"] += fake_engagement
+
+
+def best_content_type():
+
+    return max(stats.items(), key=lambda x: x[1]["score"])[0]
+
+
+# ======================
+# 🔥 اختيار ذكي نهائي
+# ======================
+
+def pick_content():
+
+    global post_counter
+    post_counter += 1
+
+    # 🔥 بوست فيروسي إجباري
+    if post_counter % 7 == 0:
+        update_stats("viral")
+        return random.choice(VIRAL_POSTS), "viral"
+
+    best = best_content_type()
+
+    r = random.random()
+
+    # 🎯 يعتمد على الأداء الفعلي
+    if best == "viral" or r < 0.35:
+        update_stats("viral")
+        return random.choice(VIRAL_POSTS), "viral"
+
+    if best == "ai" or r < 0.65:
+        update_stats("ai")
+        return generate_thought(), "ai"
+
+    # 🌐 API
+    for _ in range(10):
 
         api = random.choice(APIS)
 
         try:
-            r = requests.get(api, timeout=10)
+            res = requests.get(api, timeout=10)
 
-            if r.status_code != 200:
+            if res.status_code != 200:
                 continue
 
-            data = r.json()
+            data = res.json()
             text = extract(api, data)
 
             if not text:
                 continue
 
-            arabic = translate(text) or text
+            ar = translate(text) or text
 
-            if arabic in used:
+            if ar in used:
                 continue
 
-            used.add(arabic)
+            used.append(ar)
+            update_stats("api")
 
-            return arabic
+            return ar, "api"
 
         except:
             continue
 
-    return "الصمت أبلغ من الكلام أحيانًا."
+    return "الصمت أبلغ من الكلام أحيانًا.", "api"
 
 
-# 🎨 فريمات احترافية (تجذب الانتباه)
+# ======================
+# 🎨 تنسيق احترافي ثابت
+# ======================
+
 def format_post(text):
 
     author = random.choice(AUTHORS)
 
-    frames = [
-
-f"""━━━━━━━━━━━━━━
-✨ لم تُقال بعد ✨
-━━━━━━━━━━━━━━
+    return f"""|| ✨ لم تُقال بعد ✨ ||
 
 {text}
 
-━━━━━━━━━━━━━━
-{author}
-━━━━━━━━━━━━━━""",
+⭐ {author} ⭐"""
 
-f"""❖━━━━━━ لم تُقال بعد ━━━━━━❖
 
-{text}
-
-❖━━━━━━━━━━━━━━❖
-{author}"""
-    ]
-
-    return random.choice(frames)
-
+# ======================
+# 📩 إرسال تيليجرام
+# ======================
 
 def send():
 
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    if not token or not chat_id:
+        print("Missing env vars")
+        return
 
-    post = format_post(get_quote())
+    content, ctype = pick_content()
 
-    requests.post(url, data={
-        "chat_id": chat_id,
-        "text": post
-    })
+    requests.post(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        data={
+            "chat_id": chat_id,
+            "text": format_post(content),
+            "parse_mode": "Markdown"
+        }
+    )
 
-    print("Sent ✔")
+    print(f"Sent ✔ ({ctype})")
 
+
+# ======================
+# ⏰ توزيع احترافي نهائي
+# ======================
+
+def smart_sleep():
+
+    hour = time.localtime().tm_hour
+
+    # 🔥 peak
+    if 18 <= hour <= 23:
+        return random.randint(170, 240)
+
+    # 🌤️ normal
+    if 12 <= hour < 18:
+        return random.randint(300, 480)
+
+    # 🌙 low
+    return random.randint(600, 900)
+
+
+# ======================
+# 🚀 تشغيل النظام
+# ======================
 
 if __name__ == "__main__":
 
+    print("🚀 FINAL BOSS BOT STARTED")
+
     while True:
         send()
-        time.sleep(240)  # كل 4 دقائق
+        time.sleep(smart_sleep())
