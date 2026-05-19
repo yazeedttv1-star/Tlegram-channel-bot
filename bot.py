@@ -5,13 +5,27 @@ import requests
 
 used_quotes = set()
 
-# 5 مصادر مختلفة للعبارات
-APIS = [
-    "https://api.quotable.io/random",        # قوي
-    "https://zenquotes.io/api/random",       # قوي
-    "https://api.adviceslip.com/advice",     # نصائح قصيرة
+# ====== 5 APIs اقتباسات ======
+QUOTE_APIS = [
+    "https://api.quotable.io/random",
+    "https://zenquotes.io/api/random",
+    "https://api.adviceslip.com/advice",
     "https://api.quotable.io/random?tags=wisdom",
     "https://api.quotable.io/random?tags=inspirational"
+]
+
+# ====== عبارات واتساب ستايل ======
+WHATSAPP_STYLE = [
+    "✨ الهدوء اللي وصلتله بعد كل اللي عديت بيه يستحق الاحترام.",
+    "🖤 مش كل حاجة تستاهل رد.",
+    "⚡ الراحة النفسية أهم من أي حاجة.",
+    "🌙 اتعلمت أمشي لوحدي من غير ما أندم.",
+    "🔥 في ناس وجودهم درس مش راحة.",
+    "🤍 اختار نفسك حتى لو الكل عكسك.",
+    "✨ السكوت أحيانًا أذكى قرار.",
+    "🖤 مش لازم تشرح نفسك دايمًا.",
+    "⚡ كل واحد شايل اللي محدش شايفه.",
+    "🌙 الوجع بيعلمك تبقى أقوى."
 ]
 
 
@@ -25,40 +39,33 @@ def translate(text):
             "dt": "t",
             "q": text
         }
-
         r = requests.get(url, params=params, timeout=10)
-
         if r.status_code == 200:
             return r.json()[0][0][0]
-
     except:
         pass
-
     return None
 
 
 def extract_quote(api, data):
 
-    # API 1 + 4 + 5 (quotable)
     if "quotable.io" in api:
         return data.get("content")
 
-    # zenquotes
     if "zenquotes" in api:
         return data[0].get("q")
 
-    # adviceslip
     if "adviceslip" in api:
         return data["slip"]["advice"]
 
     return None
 
 
-def get_quote():
+def get_api_quote():
 
-    for _ in range(10):  # يحاول يجيب حاجة جديدة
+    for _ in range(10):
 
-        api = random.choice(APIS)
+        api = random.choice(QUOTE_APIS)
 
         try:
             r = requests.get(api, timeout=10)
@@ -72,13 +79,8 @@ def get_quote():
             if not text:
                 continue
 
-            # ترجمة للعربي
-            arabic = translate(text)
+            arabic = translate(text) or text
 
-            if not arabic:
-                arabic = text
-
-            # منع التكرار
             if arabic in used_quotes:
                 continue
 
@@ -89,7 +91,39 @@ def get_quote():
         except:
             continue
 
-    return "✨ استمر.. النجاح محتاج صبر أكبر مما تتخيل."
+    return None
+
+
+def get_whatsapp_quote():
+
+    remaining = list(set(WHATSAPP_STYLE) - used_quotes)
+
+    if not remaining:
+        used_quotes.clear()
+        remaining = WHATSAPP_STYLE.copy()
+
+    quote = random.choice(remaining)
+
+    used_quotes.add(quote)
+
+    return quote
+
+
+def get_post():
+
+    # توزيع ذكي:
+    # 60% واتساب ستايل
+    # 40% اقتباسات من API
+
+    if random.random() < 0.6:
+        return get_whatsapp_quote()
+
+    api_quote = get_api_quote()
+
+    if api_quote:
+        return api_quote
+
+    return get_whatsapp_quote()
 
 
 def send_to_telegram():
@@ -105,7 +139,7 @@ def send_to_telegram():
 
     payload = {
         "chat_id": chat_id,
-        "text": get_quote()
+        "text": get_post()
     }
 
     try:
@@ -116,8 +150,9 @@ def send_to_telegram():
         print("Error:", e)
 
 
+# ====== تشغيل كل دقيقة ======
 if __name__ == "__main__":
 
     while True:
         send_to_telegram()
-        time.sleep(300)  # كل 5 دقائق
+        time.sleep(60)  # كل دقيقة
