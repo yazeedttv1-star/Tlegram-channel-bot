@@ -1,54 +1,123 @@
 import os
+import time
 import random
 import requests
 
-# قاعدة بيانات العبارات الثابتة
-QUOTES = {
-    "تحفيز وتطوير": [
-        "🔥 الاستمرار في السعي هو ما يصنع الفارق، النجاح ليس ضربة حظ بل رحلة التزام يومية.",
-        "🚀 لا تنتظر الظروف المثالية لتبرز، اصنع أنت واقعك وابدأ بالمتوفر لديك الآن.",
-        "💪 العظمة لا تأتي من عدم السقوط أبدًا، بل من النهوض في كل مرة نسقط فيها."
-    ],
-    "بيزنس وإدارة": [
-        "💼 التجارة والبيزنس لا يعتمدان على الأفكار فقط، بل على جودة وفن التنفيذ في أرض الواقع.",
-        "📊 المستثمر الذكي لا يضع البيض كله في سلة واحدة، التنويع هو درع الأمان المالي.",
-        "🎯 إذا لم تكن لديك خطة واضحة لعملك، فأنت للأسف تخطط للفشل دون أن تشعر."
-    ],
-    "أقوال وحكم عميقة": [
-        "🧠 حكمة اليوم: 'الصمت في بعض المواقف ليس ضعفاً، بل هو قمة الذكاء والترفع.'",
-        "⏳ الوقت هو العملة الوحيدة التي تنفقها ولا يمكن استردادها، أحسن إدارة عملتك.",
-        "🌱 الشيء الوحيد الثابت في الحياة هو التغيير المستمر، تكيّف تنجح."
-    ]
-}
+used_quotes = set()
 
-def get_random_quote():
-    category = random.choice(list(QUOTES.keys()))
-    quote = random.choice(QUOTES[category])
-    return f"🌟 *منشور جديد* 🌟\n\n{quote}\n\n📌 *التصنيف:* {category}"
+# 5 مصادر مختلفة للعبارات
+APIS = [
+    "https://api.quotable.io/random",        # قوي
+    "https://zenquotes.io/api/random",       # قوي
+    "https://api.adviceslip.com/advice",     # نصائح قصيرة
+    "https://api.quotable.io/random?tags=wisdom",
+    "https://api.quotable.io/random?tags=inspirational"
+]
+
+
+def translate(text):
+    try:
+        url = "https://translate.googleapis.com/translate_a/single"
+        params = {
+            "client": "gtx",
+            "sl": "en",
+            "tl": "ar",
+            "dt": "t",
+            "q": text
+        }
+
+        r = requests.get(url, params=params, timeout=10)
+
+        if r.status_code == 200:
+            return r.json()[0][0][0]
+
+    except:
+        pass
+
+    return None
+
+
+def extract_quote(api, data):
+
+    # API 1 + 4 + 5 (quotable)
+    if "quotable.io" in api:
+        return data.get("content")
+
+    # zenquotes
+    if "zenquotes" in api:
+        return data[0].get("q")
+
+    # adviceslip
+    if "adviceslip" in api:
+        return data["slip"]["advice"]
+
+    return None
+
+
+def get_quote():
+
+    for _ in range(10):  # يحاول يجيب حاجة جديدة
+
+        api = random.choice(APIS)
+
+        try:
+            r = requests.get(api, timeout=10)
+
+            if r.status_code != 200:
+                continue
+
+            data = r.json()
+            text = extract_quote(api, data)
+
+            if not text:
+                continue
+
+            # ترجمة للعربي
+            arabic = translate(text)
+
+            if not arabic:
+                arabic = text
+
+            # منع التكرار
+            if arabic in used_quotes:
+                continue
+
+            used_quotes.add(arabic)
+
+            return f"✨ {arabic}"
+
+        except:
+            continue
+
+    return "✨ استمر.. النجاح محتاج صبر أكبر مما تتخيل."
+
 
 def send_to_telegram():
-    # جلب التوكن ومعرف القناة من إعدادات جيت هوب بأمان
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID") # معرف القناة (مثال: @my_channel)
 
-    if not bot_token or not chat_id:
-        print("❌ خطأ: لم يتم ضبط المتغيرات السرية في جيت هوب.")
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
+    if not token or not chat_id:
+        print("Missing env vars")
         return
 
-    # رابط الـ API الخاص بتليجرام لإرسال الرسائل
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    
-    data = {
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+
+    payload = {
         "chat_id": chat_id,
-        "text": get_random_quote(),
-        "parse_mode": "Markdown" # عشان يقبل التنسيق العريض والإيموجي
+        "text": get_quote()
     }
-    
-    response = requests.post(url, data=data)
-    if response.status_code == 200:
-        print("✅ تم نشر العبارة بنجاح في قناة التليجرام!")
-    else:
-        print(f"❌ فشل النشر: {response.text}")
+
+    try:
+        requests.post(url, data=payload, timeout=10)
+        print("✔ Sent")
+
+    except Exception as e:
+        print("Error:", e)
+
 
 if __name__ == "__main__":
-    send_to_telegram()
+
+    while True:
+        send_to_telegram()
+        time.sleep(300)  # كل 5 دقائق
