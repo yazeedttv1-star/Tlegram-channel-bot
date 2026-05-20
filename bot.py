@@ -187,15 +187,16 @@ def format_post(text, category):
 ⭐ *المؤلف:* {author} ⭐"""
 
 # ======================
-# 📩 إرسال تيليجرام
+# 📩 إرسال تيليجرام بالمفاتيح الجديدة للبوت الجديد
 # ======================
 
 def send():
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    # تعديل لقراءة توكن ومعرف القناة للبوت الجديد من الـ Secrets بأسماء جديدة
+    token = os.getenv("NEW_TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("NEW_TELEGRAM_CHAT_ID")
 
     if not token or not chat_id:
-        print("❌ Missing env vars")
+        print("❌ Missing new env vars (NEW_TELEGRAM_BOT_TOKEN or NEW_TELEGRAM_CHAT_ID)")
         return
 
     content, category, ctype = pick_content()
