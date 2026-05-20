@@ -9,7 +9,6 @@ from collections import defaultdict
 # ======================
 
 USED_QUOTES_FILE = "used_quotes.txt"
-
 used = set()
 
 if os.path.exists(USED_QUOTES_FILE):
@@ -25,7 +24,7 @@ stats = {
 }
 
 # ======================
-# ✍️ المؤلفين
+# ✍️ المؤلفون
 # ======================
 
 AUTHORS = [
@@ -38,20 +37,16 @@ AUTHORS = [
 ]
 
 # ======================
-# 🌐 APIs كثيرة
+# 🌐 مصادر الإنترنت المباشرة (اقتباسات عربية متجددة)
 # ======================
 
-APIS = [
-    "https://api.quotable.io/random",
-    "https://api.quotable.io/random?tags=wisdom",
-    "https://api.quotable.io/random?tags=life",
-    "https://api.quotable.io/random?tags=inspirational",
-    "https://api.quotable.io/random?tags=happiness",
-    "https://api.quotable.io/random?tags=success",
+ARABIC_APIS = [
+    "https://api.single-developers.software/arabicquotes", 
+    "https://api.ahmedhesham.com/quotes/random"
 ]
 
 # ======================
-# 🔥 Viral Posts
+# 🔥 العبارات الافتراضية الطارئة (Fallback)
 # ======================
 
 VIRAL_POSTS = [
@@ -70,31 +65,19 @@ VIRAL_POSTS = [
 # ======================
 
 def save_used_quote(text):
-
     used.add(text)
-
-    with open(USED_QUOTES_FILE, "a", encoding="utf-8") as f:
-        f.write(text + "\n")
-
+    try:
+        with open(USED_QUOTES_FILE, "a", encoding="utf-8") as f:
+            f.write(text + "\n")
+    except:
+        pass
 
 # ======================
-# 🤖 توليد خواطر عربية
+# 🤖 توليد خواطر عربية (AI المدمج)
 # ======================
 
 def generate_thought():
-
-    subjects = [
-        "الصمت",
-        "الخذلان",
-        "الحنين",
-        "الوحدة",
-        "الألم",
-        "الغياب",
-        "النسيان",
-        "الذكريات",
-        "الحب"
-    ]
-
+    subjects = ["الصمت", "الخذلان", "الحنين", "الوحدة", "الألم", "الغياب", "النسيان", "الذكريات", "الحب"]
     templates = [
         "لم أعد أبحث عن {} بل عن نفسي التي فقدتها أثناء الطريق.",
         "كل ما تبقى من {} هو أثر لا يُرى.",
@@ -104,172 +87,110 @@ def generate_thought():
         "أحيانًا يكون {} أثقل من الكلام نفسه.",
         "ما زلت أحاول النجاة من {} حتى الآن."
     ]
-
     return random.choice(templates).format(random.choice(subjects))
 
-
 # ======================
-# 🌐 ترجمة
-# ======================
-
-def translate(text):
-
-    try:
-
-        r = requests.get(
-            "https://translate.googleapis.com/translate_a/single",
-            params={
-                "client": "gtx",
-                "sl": "en",
-                "tl": "ar",
-                "dt": "t",
-                "q": text
-            },
-            timeout=10
-        )
-
-        if r.status_code == 200:
-            return r.json()[0][0][0]
-
-    except:
-        pass
-
-    return None
-
-
-# ======================
-# 📥 استخراج API
+# 🧠 المصنف الذكي للعبارات الخارجية
 # ======================
 
-def extract(api, data):
-
-    if "quotable.io" in api:
-        return data.get("content")
-
-    return None
-
+def classify_content(text):
+    text_lower = text.lower()
+    
+    # تصنيف تحفيز وتطوير ذات
+    if any(w in text_lower for w in ["نجاح", "هدف", "حلم", "فشل", "استمر", "قوة", "عزيمة", "طموح"]):
+        return "تحفيز وتطوير ذات 🔥"
+    
+    # تصنيف بيزنس وإدارة
+    elif any(w in text_lower for w in ["عمل", "مال", "تجارة", "بيزنس", "قائد", "وقت", "خطة", "استثمار"]):
+        return "بيزنس وإدارة وعمل 💼"
+    
+    # تصنيف افتراضي في حال كانت الخواطر عامة أو فلسفية
+    return "أقوال وحكم عميقة 🧠"
 
 # ======================
 # 📊 تحليل الأداء
 # ======================
 
 def update_stats(content_type):
-
     fake_engagement = random.uniform(0.5, 1.5)
-
     stats[content_type]["sent"] += 1
     stats[content_type]["score"] += fake_engagement
 
-
 def best_content_type():
-
     return max(stats.items(), key=lambda x: x[1]["score"])[0]
 
-
 # ======================
-# 🧠 اختيار المحتوى
+# 📥 سحب واختيار المحتوى ديناميكيًا من الإنترنت
 # ======================
 
 def pick_content():
-
     global post_counter
-
     post_counter += 1
 
-    # 🔥 بوست قوي كل 7 مرات
+    # بوست فيرال مخزن كل 7 مرات لضمان ثبات الجودة
     if post_counter % 7 == 0:
-
         text = random.choice(VIRAL_POSTS)
-
         update_stats("viral")
-
-        return text, "viral"
+        return text, "تحفيز وتطوير ذات 🔥", "static_viral"
 
     best = best_content_type()
-
     r = random.random()
 
-    # 🔥 Viral
-    if best == "viral" or r < 0.35:
-
+    # المسار الأول: العبارات القوية المخزنة (Viral)
+    if best == "viral" or r < 0.30:
         text = random.choice(VIRAL_POSTS)
-
         if text not in used:
             save_used_quote(text)
-
         update_stats("viral")
+        return text, "أقوال وحكم عميقة 🧠", "static_viral"
 
-        return text, "viral"
-
-    # 🤖 AI عربي
-    if best == "ai" or r < 0.65:
-
+    # المسار الثاني: خواطر الذكاء الاصطناعي المبنية محليًا
+    if best == "ai" or r < 0.55:
         text = generate_thought()
-
         if text not in used:
             save_used_quote(text)
-
         update_stats("ai")
+        return text, "أقوال وحكم عميقة 🧠", "local_ai"
 
-        return text, "ai"
-
-    # 🌐 API
-    for _ in range(20):
-
-        api = random.choice(APIS)
-
+    # المسار الثالث: الطيران للإنترنت لجلب محتوى جديد تمامًا وتصنيفه تلقائيًا
+    random.shuffle(ARABIC_APIS)
+    for api in ARABIC_APIS:
         try:
-
-            res = requests.get(api, timeout=10)
-
-            if res.status_code != 200:
-                continue
-
-            data = res.json()
-
-            text = extract(api, data)
-
-            if not text:
-                continue
-
-            arabic = translate(text) or text
-
-            if arabic in used:
-                continue
-
-            save_used_quote(arabic)
-
-            update_stats("api")
-
-            return arabic, "api"
-
+            res = requests.get(api, timeout=7)
+            if res.status_code == 200:
+                data = res.json()
+                text = data.get("quote") or data.get("text") or data.get("content")
+                
+                if text and text not in used and len(text) > 10:
+                    save_used_quote(text)
+                    category = classify_content(text)
+                    update_stats("api")
+                    return text, category, "live_api"
         except:
             continue
 
-    return "الصمت أبلغ من الكلام أحيانًا.", "fallback"
-
+    # في حال فشل الاتصال بالإنترنت تمامًا
+    fallback_text = random.choice(VIRAL_POSTS)
+    return fallback_text, "أقوال وحكم عميقة 🧠", "fallback"
 
 # ======================
-# 🎨 تنسيق البوست
+# 🎨 تنسيق البوست بالهيكل الذي تفضله
 # ======================
 
-def format_post(text):
-
+def format_post(text, category):
     author = random.choice(AUTHORS)
+    return f"""🌟 *منشور جديد* 🌟
 
-    return f"""*|| ✨ لم تُقال بعد ✨ ||*
+“ {text.strip()} ”
 
-{text}
-
-*⭐ {author} ⭐*"""
-
+📌 *التصنيف:* {category}
+⭐ *المؤلف:* {author} ⭐"""
 
 # ======================
 # 📩 إرسال تيليجرام
 # ======================
 
 def send():
-
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -277,54 +198,40 @@ def send():
         print("❌ Missing env vars")
         return
 
-    content, ctype = pick_content()
+    content, category, ctype = pick_content()
 
     requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
         data={
             "chat_id": chat_id,
-            "text": format_post(content),
+            "text": format_post(content, category),
             "parse_mode": "Markdown"
         }
     )
 
-    print(f"✅ Sent ({ctype})")
-
+    print(f"✅ Sent ({ctype}) -> Category: {category}")
 
 # ======================
-# ⏰ توزيع ذكي
+# ⏰ توزيع ذكي للوقت
 # ======================
 
 def smart_sleep():
-
     hour = time.localtime().tm_hour
-
-    # 🔥 وقت الذروة
     if 18 <= hour <= 23:
         return random.randint(170, 240)
-
-    # 🌤️ وقت متوسط
     if 12 <= hour < 18:
         return random.randint(300, 480)
-
-    # 🌙 وقت هادئ
     return random.randint(600, 900)
 
-
 # ======================
-# 🚀 تشغيل البوت
+# 🚀 تشغيل البوت المستمر
 # ======================
 
 if __name__ == "__main__":
-
-    print("🚀 FINAL BOSS BOT STARTED")
-
+    print("🚀 FINAL BOSS BOT WITH LIVE WEB EXTENSION STARTED")
     while True:
-
         try:
             send()
-
         except Exception as e:
             print("❌ ERROR:", e)
-
         time.sleep(smart_sleep())
