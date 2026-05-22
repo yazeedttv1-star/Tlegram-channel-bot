@@ -3,20 +3,8 @@ import random
 import requests
 
 # ======================
-# 🧠 نظام الذاكرة الفولاذي ضد التكرار
-# ======================
-
-USED_QUOTES_FILE = "used_quotes.txt"
-used = set()
-
-if os.path.exists(USED_QUOTES_FILE):
-    with open(USED_QUOTES_FILE, "r", encoding="utf-8") as f:
-        used = set(line.strip() for line in f if line.strip())
-
-# ======================
 # ✍️ المؤلفون
 # ======================
-
 AUTHORS = [
     "دوستويفسكي 📚", "إرنست همنغواي 📚", "فرجينيا وولف 📚",
     "أوسكار وايلد 📚", "نيتشه 📚", "جبران خليل جبران 📚"
@@ -25,7 +13,6 @@ AUTHORS = [
 # ======================
 # 🌐 مصادر الإنترنت المباشرة (اقتباسات عربية متجددة)
 # ======================
-
 ARABIC_APIS = [
     "https://api.single-developers.software/arabicquotes", 
     "https://api.ahmedhesham.com/quotes/random"
@@ -42,14 +29,6 @@ VIRAL_POSTS = [
     "كل الذين نجوا كانوا يحملون شيئًا مكسورًا بداخلهم.",
 ]
 
-def save_used_quote(text):
-    used.add(text)
-    try:
-        with open(USED_QUOTES_FILE, "a", encoding="utf-8") as f:
-            f.write(text + "\n")
-    except:
-        pass
-
 def generate_thought():
     subjects = ["الصمت", "الخذلان", "الحنين", "الوحدة", "الألم", "الغياب", "النسيان", "الذكريات", "الحب"]
     templates = [
@@ -59,11 +38,6 @@ def generate_thought():
         "تغيّرت نظرتي إلى {} دون أن أشعر.",
         "لم يعد {} يعني لي ما كان يعنيه من قبل."
     ]
-    # محاولة توليد خاطرة جديدة لم تُستخدم من قبل
-    for _ in range(50):
-        thought = random.choice(templates).format(random.choice(subjects))
-        if thought not in used:
-            return thought
     return random.choice(templates).format(random.choice(subjects))
 
 def classify_content(text):
@@ -75,40 +49,31 @@ def classify_content(text):
     return "أقوال وحكم عميقة 🧠"
 
 # ======================
-# 🚀 دالة الاختيار الـ Max (ممنوع التكرار نهائياً)
+# 🚀 دالة الاختيار الفولاذية (بدون الحاجة لحفظ ملفات)
 # ======================
 def pick_content():
-    # بنجرب 30 مرة "نطير" على الإنترنت نجيب جملة جديدة تماماً ومش موجودة في الذاكرة
-    random.shuffle(ARABIC_APIS)
-    for _ in range(30):
+    r = random.random()
+
+    # 50% يسحب لايف من الإنترنت لتجديد المحتوى بالكامل
+    if r < 0.50:
+        random.shuffle(ARABIC_APIS)
         for api in ARABIC_APIS:
             try:
                 res = requests.get(api, timeout=7)
                 if res.status_code == 200:
                     data = res.json()
                     text = data.get("quote") or data.get("text") or data.get("content")
-                    # شرط صارم: لازم النص ميكونش اتنشر قبل كده وطوله مناسب
-                    if text and text.strip() not in used and len(text) > 10:
-                        save_used_quote(text.strip())
+                    if text and len(text) > 10:
                         return text, classify_content(text), "live_api"
             except:
                 continue
 
-    # لو الإنترنت علق أو ملقاش جديد، بنروح للذكاء الاصطناعي يولد حاجة جديدة
-    text = generate_thought()
-    if text not in used:
-        save_used_quote(text)
-        return text, "أقوال وحكم عميقة 🧠", "local_ai"
+    # 30% يولد خواطر بالذكاء الاصطناعي
+    if r < 0.80:
+        return generate_thought(), "أقوال وحكم عميقة 🧠", "local_ai"
 
-    # لو كل الخطوط قفلت، بينقي بوست من الفيرال بشرط ميكونش اتكرر
-    available_viral = [p for p in VIRAL_POSTS if p not in used]
-    if available_viral:
-        text = random.choice(available_viral)
-        save_used_quote(text)
-        return text, "أقوال وحكم عميقة 🧠", "static_viral"
-        
-    # fallback أخير جداً إذا امتلأت الذاكرة تماماً
-    return random.choice(VIRAL_POSTS), "أقوال وحكم عميقة 🧠", "fallback"
+    # المتبقي يسحب من الفيرال المخزن
+    return random.choice(VIRAL_POSTS), "أقوال وحكم عميقة 🧠", "static_viral"
 
 def format_post(text, category):
     author = random.choice(AUTHORS)
@@ -124,12 +89,7 @@ def send():
 
     content, category, ctype = pick_content()
     
-    # تحديث ملف الذاكرة في جيت هوب تلقائياً عشان يفتكر المنشورات اللي نزلت
-    os.system("git config --local user.email 'action@github.com'")
-    os.system("git config --local user.name 'GitHub Action'")
-    os.system("git add used_quotes.txt")
-    os.system("git commit -m '🔄 Update used quotes memory' --allow-empty")
-    os.system("git push")
+    # تم إلغاء كل أسطر الـ git push والـ الالتزامات المالية والبرمجية نهائياً 🧼
 
     requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
