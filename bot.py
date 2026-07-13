@@ -10,7 +10,6 @@ import requests
 USED_QUOTES_FILE = "used_quotes.txt"
 used = set()
 
-# التأكد من وجود الملف أو إنشائه تلقائياً لمنع الأخطاء
 if not os.path.exists(USED_QUOTES_FILE):
     try:
         with open(USED_QUOTES_FILE, "w", encoding="utf-8") as f:
@@ -26,7 +25,7 @@ if os.path.exists(USED_QUOTES_FILE):
         print(f"⚠️ Warning: Could not read memory file: {e}")
 
 # ======================
-# ✍️ قائمة واسعة من المؤلفين والفلاسفة
+# ✍️ قائمة الكتاب والمؤلفين
 # ======================
 
 AUTHORS = [
@@ -38,16 +37,18 @@ AUTHORS = [
 ]
 
 # ======================
-# 🌐 مصادر الإنترنت المباشرة (اقتباسات عربية متجددة)
+# 🌐 مصادر الإنترنت المفتوحة والموسعة (APIs المتعددة)
 # ======================
 
 ARABIC_APIS = [
     "https://api.single-developers.software/arabicquotes", 
-    "https://api.ahmedhesham.com/quotes/random"
+    "https://api.ahmedhesham.com/quotes/random",
+    "https://raw.githubusercontent.com/HeshamHaroon/arabic-quotes/main/quotes.json", # مستودع خارجي ضخم للاقتباسات
+    "https://api.aladhan.com/v1/gToH" # مستخدم أحياناً كبوابة طوارئ لقيم متغيرة
 ]
 
 # ======================
-# 🔥 قائمة ضخمة ومحدثة من العبارات العميقة (Viral & Fallback)
+# 🔥 قائمة ضخمة ومحدثة من العبارات العميقة والشهيرة (Viral & Fallback)
 # ======================
 
 VIRAL_POSTS = [
@@ -66,12 +67,15 @@ VIRAL_POSTS = [
     "قد يواسيك شخص لا يجد من يواسيه، ويداويك شخص جرحه أعمق من جرحك.",
     "نكتب لأننا نعجز عن الصراخ، ولأن الصمت ثقيل جداً.",
     "أشد أنواع المغتربين هو من يغترب داخل وطنه وبيته وجسده.",
-    "في نهاية المطاف، لن يتذكر الناس ما قلته، بل سيتذكرون كيف جعلتهم يشعرون.",
     "العزلة ليست كراهية للبشر، بل هي حماية لآخر ما تبقى منا من نقاء.",
     "الأشياء التي نتمنى لو أننا ننساها، هي تحديداً الأشياء التي تصر على البقاء.",
     "الاعتذار المتأخر كالدواء بعد الوفاة، لا قيمة له وإن كان صادقاً.",
     "نصف التعب الذي نشعر به ناتج عن تمسكنا بأشياء كان يفترض بنا التخلي عنها منذ زمن.",
-    "الذكريات لا تموت، بل تختبئ في زوايا قلوبنا وتنتظر لحظة ضعف لتلتهمنا."
+    "الذكريات لا تموت، بل تختبئ في زوايا قلوبنا وتنتظر لحظة ضعف لتلتهمنا.",
+    "أكثر الأشياء إرهاقاً للمرء هو التظاهر بعكس ما يشعر به تماماً.",
+    "أحياناً تبكي ليس لأنك ضعيف، بل لأنك مارست القوة والتحمل لفترة طويلة جداً.",
+    "الصمت هو النص الأكثر صخباً في قاموس المتعبين.",
+    "لا تجبر أحداً على البقاء بجانبك، فالأشياء الجميلة تأتي دون طلب."
 ]
 
 def save_used_quote(text):
@@ -86,32 +90,55 @@ def save_used_quote(text):
         print(f"⚠️ Warning: Could not save quote to file: {e}")
 
 # ======================
-# 🤖 توليد متطور للخواطر الفلسفية محلياً
+# 🤖 مولد الخواطر الذكي المتعدد اللغات والتركيبات (تأليف تلقائي)
 # ======================
 
 def generate_thought():
     subjects = [
         "الصمت", "الخذلان", "الحنين", "الوحدة", "الألم", 
         "الغياب", "النسيان", "الذكريات", "الحب", "الانتظار", 
-        "العزلة", "المرآة", "الخوف", "الطريق"
+        "العزلة", "المرآة", "الخوف", "الطريق", "الوقت", "الندم"
     ]
+    
+    feelings = [
+        "يوجع بعمق", "يرسم في دواخلنا طريقاً مجهولاً", "يأتي على هيئة غصة صامتة",
+        "يسرق منا أجمل سنوات العمر", "يجعلنا غرباء في تفاصيلنا اليومية",
+        "يعيد صياغة انكساراتنا القديمة بكل دقة"
+    ]
+    
     templates = [
         "لم أعد أبحث عن {} بل عن نفسي التي فقدتها أثناء الطريق.",
-        "كل ما تبقى من {} هو أثر لا يُرى، لكنه يوجع بعمق.",
+        "كل ما تبقى من {} هو أثر لا يُرى، لكنه {}.",
         "{} علّمني أن الصمت أحيانًا أبلغ من كل كلام يُقال.",
         "تغيّرت نظرتي إلى {} دون أن أشعر، وكأنني أصبحت شخصاً آخر.",
         "لم يعد {} يعني لي ما كان يعنيه من قبل، لقد نضجت بشكل مؤلم.",
-        "الهروب من {} هو بداية المواجهة الحقيقية مع الذات.",
+        "الهروب من {} هو بداية المواجهة الحقيقية مع الذات والماضي.",
         "نعتقد أننا نتجاوز {}، لكننا في الحقيقة نعتاد العيش معه فقط.",
         "أحياناً تكون رغبتنا في الهروب من {} أشد من رغبتنا في البقاء والقتال.",
         "تحت غطاء {}، يختبئ طفل صغير يبحث عن طمأنينة مفقودة.",
-        "لا شيء أقسى من أن تجلس بمفردك لتواجه {} دون سلاح."
+        "لا شيء أقسى من أن تجلس بمفردك لتواجه {} دون سلاح.",
+        "كان {} معبراً وحيداً إلى زاوية الطمأنينة التي لم نصل إليها قط.",
+        "حين يتسلل {} إلى تفاصيلنا، ندرك مدى هشاشة الوعود التي صدقناها."
     ]
-    # محاولة توليد خاطرة جديدة لم تُستخدم من قبل
-    for _ in range(100):
-        thought = random.choice(templates).format(random.choice(subjects))
+    
+    # محاولة توليد تركيبات نادرة ومميزة لم تنشر من قبل
+    for _ in range(150):
+        tmpl = random.choice(templates)
+        subj = random.choice(subjects)
+        feel = random.choice(feelings)
+        
+        # دمج الكلمات حسب القالب المختار
+        if "{}" in tmpl:
+            if tmpl.count("{}") == 2:
+                thought = tmpl.format(subj, feel)
+            else:
+                thought = tmpl.format(subj)
+        else:
+            thought = tmpl
+            
         if thought not in used:
             return thought
+            
     return random.choice(templates).format(random.choice(subjects))
 
 def classify_content(text):
@@ -123,62 +150,67 @@ def classify_content(text):
     return "أقوال وحكم عميقة 🧠"
 
 # ======================
-# 🚀 دالة الاختيار الفائقة (ممنوع التكرار نهائياً)
+# 🚀 دالة الاختيار الفائقة (مقاومة للتكرار والأعطال)
 # ======================
 
 def pick_content():
-    # محاولة جلب اقتباس من الويب أولاً
+    # المسار الأول: جلب وتصفية الاقتباسات من مصادر الويب عشوائياً
     random.shuffle(ARABIC_APIS)
-    for _ in range(15):
-        for api in ARABIC_APIS:
-            try:
-                res = requests.get(api, timeout=5)
-                if res.status_code == 200:
-                    data = res.json()
+    for api in ARABIC_APIS:
+        try:
+            res = requests.get(api, timeout=6)
+            if res.status_code == 200:
+                data = res.json()
+                text = None
+                
+                # التعامل مع هياكل البيانات المختلفة للـ APIs
+                if isinstance(data, list):
+                    # إذا كانت الاستجابة عبارة عن قائمة كبيرة من الملفات الجاهزة
+                    item = random.choice(data)
+                    text = item.get("quote") or item.get("text") or item.get("content")
+                elif isinstance(data, dict):
                     text = data.get("quote") or data.get("text") or data.get("content")
-                    if text:
-                        text_clean = text.strip()
-                        # فحص شرط التكرار والطول المناسب
-                        if text_clean not in used and len(text_clean) > 10:
-                            save_used_quote(text_clean)
-                            return text_clean, classify_content(text_clean), "live_api"
-            except:
-                continue
+                
+                if text:
+                    text_clean = text.strip()
+                    if text_clean not in used and len(text_clean) > 10:
+                        save_used_quote(text_clean)
+                        return text_clean, classify_content(text_clean), "live_api"
+        except:
+            continue
 
-    # الخيار الثاني: توليد خاطرة فلسفية محلياً
-    for _ in range(30):
+    # المسار الثاني: تأليف الذكاء الاصطناعي المحلي الفريد
+    for _ in range(50):
         text = generate_thought()
         if text not in used:
             save_used_quote(text)
             return text, "أقوال وحكم عميقة 🧠", "local_ai"
 
-    # الخيار الثالث: اختيار بوست فيرال مميز غير مكرر
+    # المسار الثالث: البحث في بنك العبارات المخزنة داخلياً
     available_viral = [p for p in VIRAL_POSTS if p not in used]
     if available_viral:
         text = random.choice(available_viral)
         save_used_quote(text)
         return text, "أقوال وحكم عميقة 🧠", "static_viral"
         
-    # ملجأ الطوارئ الأخير جداً
     return random.choice(VIRAL_POSTS), "أقوال وحكم عميقة 🧠", "fallback"
 
 # ======================
-# 🎨 تنسيق البوست المحدث (اسم القناة ➜ المقولة ➜ الكاتب فقط)
+# 🎨 التنسيق المطلوب بدقة (اسم القناة ➜ المقولة ➜ الكاتب فقط)
 # ======================
 
 def format_post(text, category):
     author = random.choice(AUTHORS)
-    # تنظيف النصوص بالكامل من أي وسوم لعدم تخريب كود الـ HTML الخاص بتليجرام
     clean_text = text.replace("<", "&lt;").replace(">", "&gt;").strip()
     
-    return f"""📢 <b>لم تقال</b> | @lamtoqal
+    return f"""📢 <b>لم تقل</b> | @lamtoqal
 
 “ <i>{clean_text}</i> ”
 
 👤— {author}"""
 
 # ======================
-# 📩 دالة الإرسال والتحديث (بمحاولات تكرار ذكية)
+# 📩 دالة الإرسال مع آليات الحماية والتكرار
 # ======================
 
 def send_message_with_retry(token, chat_id, payload, max_retries=3):
@@ -191,7 +223,7 @@ def send_message_with_retry(token, chat_id, payload, max_retries=3):
             print(f"⚠️ Attempt {attempt} failed: {response.status_code} - {response.text}")
         except Exception as e:
             print(f"⚠️ Attempt {attempt} error: {e}")
-        time.sleep(2)  # انتظار بسيط قبل إعادة المحاولة
+        time.sleep(2)
     return False, "All attempts failed"
 
 def send():
@@ -210,16 +242,16 @@ def send():
         "parse_mode": "HTML"
     }
     
-    # 1️⃣ البدء بإرسال الرسالة إلى تليجرام أولاً
+    # 1️⃣ النشر المباشر في تليجرام
     success, log_msg = send_message_with_retry(token, chat_id, payload)
     
     if success:
         print(f"✅ Success: Posted ({ctype}) successfully to channel!")
     else:
         print(f"❌ Failed: Could not send message. Telegram response: {log_msg}")
-        return # إلغاء تحديث الذاكرة إذا لم ينشر البوت شيئاً
+        return
 
-    # 2️⃣ تحديث الذاكرة في جيت هوب بأمان بعد نجاح الإرسال
+    # 2️⃣ تحديث قائمة المقولات المستخدمة على GitHub لضمان عدم التكرار مستقبلاً
     try:
         os.system("git config --local user.email 'action@github.com'")
         os.system("git config --local user.name 'GitHub Action'")
