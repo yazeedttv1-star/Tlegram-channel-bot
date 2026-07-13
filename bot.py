@@ -127,7 +127,7 @@ def classify_content(text):
 # ======================
 
 def pick_content():
-    # محاولة جلب اقتباس من الويب أولاً بنظام ذكي ومقاوم لبطء الاستجابة
+    # محاولة جلب اقتباس من الويب أولاً
     random.shuffle(ARABIC_APIS)
     for _ in range(15):
         for api in ARABIC_APIS:
@@ -163,7 +163,7 @@ def pick_content():
     return random.choice(VIRAL_POSTS), "أقوال وحكم عميقة 🧠", "fallback"
 
 # ======================
-# 🎨 تنسيق البوست بشكل احترافي وجذاب للغاية (HTML)
+# 🎨 تنسيق البوست المحدث (اسم القناة ➜ المقولة ➜ الكاتب فقط)
 # ======================
 
 def format_post(text, category):
@@ -171,16 +171,11 @@ def format_post(text, category):
     # تنظيف النصوص بالكامل من أي وسوم لعدم تخريب كود الـ HTML الخاص بتليجرام
     clean_text = text.replace("<", "&lt;").replace(">", "&gt;").strip()
     
-    return f"""━━━━━━━━━━━━━━━━━━
-✨ <b>مَقْـبَـسُ الـفِـكْـر</b> ✨
-━━━━━━━━━━━━━━━━━━
+    return f"""📢 <b>لم تقل</b> | @lamtoqal
 
 “ <i>{clean_text}</i> ”
 
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-📌 <b>التصنيف:</b> {category}
-⭐ <b>المقتبس:</b> {author}
-━━━━━━━━━━━━━━━━━━"""
+👤— {author}"""
 
 # ======================
 # 📩 دالة الإرسال والتحديث (بمحاولات تكرار ذكية)
