@@ -203,11 +203,11 @@ def format_post(text, category):
     author = random.choice(AUTHORS)
     clean_text = text.replace("<", "&lt;").replace(">", "&gt;").strip()
     
-    return f"""📢 <b>لم تقل</b> | @lamtoqal
+    return f"""🗓️ <b>لم تقال</b> | @lamtoqal
 
 “ <i>{clean_text}</i> ”
 
-👤— {author}"""
+📍👑— {author}"""
 
 # ======================
 # 📩 دالة الإرسال مع آليات الحماية والتكرار
