@@ -1,28 +1,35 @@
-name: Telegram Channel Bot
+name: Auto Post Bot
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # يشتغل كل 6 ساعات تلقائياً
-  workflow_dispatch: # للتشغيل اليدوي للتجربة
+    # ⏰ تم الضبط لينشر البوت تلقائياً "كل ساعة" على مدار اليوم
+    - cron: '0 * * * *'
+  
+  # يتيح لك هذا السطر تشغيل البوت يدوياً في أي وقت من صفحة Actions للتجربة
+  workflow_dispatch:
 
 jobs:
-  publish:
+  run-bot:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout Repository
+    - name: Checkout repository code
       uses: actions/checkout@v3
+      with:
+        persist-credentials: true
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - name: Install Dependencies
-      run: pip install requests
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
 
-    - name: Run Bot
+    - name: Run Bot Script
       env:
-        # هنا غيرنا الأسماء عشان يقرأ البوت الجديد من الـ Secrets اللي عملناها
         NEW_TELEGRAM_BOT_TOKEN: ${{ secrets.NEW_TELEGRAM_BOT_TOKEN }}
-        NEW_TELEGRAM_CHAT_ID: ${{ secrets.NEW_TELEGRAM_CHAT_ID }} 
+        NEW_TELEGRAM_CHAT_ID: ${{ secrets.NEW_TELEGRAM_CHAT_ID }}
       run: python bot.py
