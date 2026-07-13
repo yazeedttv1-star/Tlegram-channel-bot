@@ -171,7 +171,7 @@ def format_post(text, category):
     # تنظيف النصوص بالكامل من أي وسوم لعدم تخريب كود الـ HTML الخاص بتليجرام
     clean_text = text.replace("<", "&lt;").replace(">", "&gt;").strip()
     
-    return f"""📢 <b>لم تقل</b> | @lamtoqal
+    return f"""📢 <b>لم تقال</b> | @lamtoqal
 
 “ <i>{clean_text}</i> ”
 
