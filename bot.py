@@ -2,38 +2,37 @@ import os
 import time
 import random
 import requests
-from collections import defaultdict
 
 # ======================
-# 🧠 Memory System
+# 🧠 نظام الذاكرة الفولاذي ضد التكرار
 # ======================
 
 USED_QUOTES_FILE = "used_quotes.txt"
 used = set()
 
+# التأكد من وجود الملف أو إنشائه تلقائياً لمنع الأخطاء
+if not os.path.exists(USED_QUOTES_FILE):
+    try:
+        with open(USED_QUOTES_FILE, "w", encoding="utf-8") as f:
+            f.write("")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not create memory file: {e}")
+
 if os.path.exists(USED_QUOTES_FILE):
-    with open(USED_QUOTES_FILE, "r", encoding="utf-8") as f:
-        used = set(line.strip() for line in f if line.strip())
-
-post_counter = 0
-
-stats = {
-    "viral": {"sent": 0, "score": 1.0},
-    "ai": {"sent": 0, "score": 1.0},
-    "api": {"sent": 0, "score": 1.0}
-}
+    try:
+        with open(USED_QUOTES_FILE, "r", encoding="utf-8") as f:
+            used = set(line.strip() for line in f if line.strip())
+    except Exception as e:
+        print(f"⚠️ Warning: Could not read memory file: {e}")
 
 # ======================
 # ✍️ المؤلفون
 # ======================
 
 AUTHORS = [
-    "دوستويفسكي 📚",
-    "إرنست همنغواي 📚",
-    "فرجينيا وولف 📚",
-    "أوسكار وايلد 📚",
-    "نيتشه 📚",
-    "جبران خليل جبران 📚"
+    "دوستويفسكي 📚", "إرنست همنغواي 📚", "فرجينيا وولف 📚",
+    "أوسكار وايلد 📚", "نيتشه 📚", "جبران خليل جبران 📚",
+    "نجيب محفوظ 📚", "محمود درويش 📚", "جلال الدين الرومي 📚"
 ]
 
 # ======================
@@ -45,10 +44,6 @@ ARABIC_APIS = [
     "https://api.ahmedhesham.com/quotes/random"
 ]
 
-# ======================
-# 🔥 العبارات الافتراضية الطارئة (Fallback)
-# ======================
-
 VIRAL_POSTS = [
     "أخطر ما في الحياة أنك تعتاد الألم وتظنه طبيعيًا.",
     "هناك نسخ منك ماتت بصمت ولم يلاحظها أحد.",
@@ -58,181 +53,146 @@ VIRAL_POSTS = [
     "أحيانًا لا ينقصنا شيء سوى شخص يفهم صمتنا.",
     "الخذلان لا يأتي من الغرباء أبدًا.",
     "كل الذين نجوا كانوا يحملون شيئًا مكسورًا بداخلهم.",
+    "الهدوء صاخب جداً لمن يملك عقلاً مزدحماً.",
+    "نحن لا نرتب بكتف أحد، نحن نضم قلوبنا ونصمت."
 ]
 
-# ======================
-# 💾 حفظ الاقتباسات
-# ======================
-
 def save_used_quote(text):
-    used.add(text)
+    text_clean = text.strip()
+    if not text_clean:
+        return
+    used.add(text_clean)
     try:
         with open(USED_QUOTES_FILE, "a", encoding="utf-8") as f:
-            f.write(text + "\n")
-    except:
-        pass
-
-# ======================
-# 🤖 توليد خواطر عربية (AI المدمج)
-# ======================
+            f.write(text_clean + "\n")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not save quote to file: {e}")
 
 def generate_thought():
-    subjects = ["الصمت", "الخذلان", "الحنين", "الوحدة", "الألم", "الغياب", "النسيان", "الذكريات", "الحب"]
+    subjects = ["الصمت", "الخذلان", "الحنين", "الوحدة", "الألم", "الغياب", "النسيان", "الذكريات", "الحب", "الانتظار"]
     templates = [
         "لم أعد أبحث عن {} بل عن نفسي التي فقدتها أثناء الطريق.",
         "كل ما تبقى من {} هو أثر لا يُرى.",
         "{} علّمني أن الصمت أحيانًا أبلغ من كل شيء.",
         "تغيّرت نظرتي إلى {} دون أن أشعر.",
         "لم يعد {} يعني لي ما كان يعنيه من قبل.",
-        "أحيانًا يكون {} أثقل من الكلام نفسه.",
-        "ما زلت أحاول النجاة من {} حتى الآن."
+        "الهروب من {} هو بداية المواجهة الحقيقية مع الذات.",
+        "نعتقد أننا نتجاوز {}، لكننا نعتاده فقط."
     ]
+    # محاولة توليد خاطرة جديدة لم تُستخدم من قبل
+    for _ in range(100):
+        thought = random.choice(templates).format(random.choice(subjects))
+        if thought not in used:
+            return thought
     return random.choice(templates).format(random.choice(subjects))
-
-# ======================
-# 🧠 المصنف الذكي للعبارات الخارجية
-# ======================
 
 def classify_content(text):
     text_lower = text.lower()
-    
-    # تصنيف تحفيز وتطوير ذات
     if any(w in text_lower for w in ["نجاح", "هدف", "حلم", "فشل", "استمر", "قوة", "عزيمة", "طموح"]):
         return "تحفيز وتطوير ذات 🔥"
-    
-    # تصنيف بيزنس وإدارة
     elif any(w in text_lower for w in ["عمل", "مال", "تجارة", "بيزنس", "قائد", "وقت", "خطة", "استثمار"]):
         return "بيزنس وإدارة وعمل 💼"
-    
-    # تصنيف افتراضي في حال كانت الخواطر عامة أو فلسفية
     return "أقوال وحكم عميقة 🧠"
 
 # ======================
-# 📊 تحليل الأداء
+# 🚀 دالة الاختيار الـ Max (ممنوع التكرار نهائياً)
 # ======================
-
-def update_stats(content_type):
-    fake_engagement = random.uniform(0.5, 1.5)
-    stats[content_type]["sent"] += 1
-    stats[content_type]["score"] += fake_engagement
-
-def best_content_type():
-    return max(stats.items(), key=lambda x: x[1]["score"])[0]
-
-# ======================
-# 📥 سحب واختيار المحتوى ديناميكيًا من الإنترنت
-# ======================
-
 def pick_content():
-    global post_counter
-    post_counter += 1
+    # محاولة جلب اقتباس من الويب أولاً بنظام ذكي ومقاوم لبطء الاستجابة
+    random.shuffle(ARABIC_APIS)
+    for _ in range(15):
+        for api in ARABIC_APIS:
+            try:
+                res = requests.get(api, timeout=5)
+                if res.status_code == 200:
+                    data = res.json()
+                    text = data.get("quote") or data.get("text") or data.get("content")
+                    if text:
+                        text_clean = text.strip()
+                        # فحص شرط التكرار والطول المناسب
+                        if text_clean not in used and len(text_clean) > 10:
+                            save_used_quote(text_clean)
+                            return text_clean, classify_content(text_clean), "live_api"
+            except:
+                continue
 
-    # بوست فيرال مخزن كل 7 مرات لضمان ثبات الجودة
-    if post_counter % 7 == 0:
-        text = random.choice(VIRAL_POSTS)
-        update_stats("viral")
-        return text, "تحفيز وتطوير ذات 🔥", "static_viral"
-
-    best = best_content_type()
-    r = random.random()
-
-    # المسار الأول: العبارات القوية المخزنة (Viral)
-    if best == "viral" or r < 0.30:
-        text = random.choice(VIRAL_POSTS)
-        if text not in used:
-            save_used_quote(text)
-        update_stats("viral")
-        return text, "أقوال وحكم عميقة 🧠", "static_viral"
-
-    # المسار الثاني: خواطر الذكاء الاصطناعي المبنية محليًا
-    if best == "ai" or r < 0.55:
+    # الخيار الثاني: توليد خاطرة ذكاء اصطناعي محلياً
+    for _ in range(20):
         text = generate_thought()
         if text not in used:
             save_used_quote(text)
-        update_stats("ai")
-        return text, "أقوال وحكم عميقة 🧠", "local_ai"
+            return text, "أقوال وحكم عميقة 🧠", "local_ai"
 
-    # المسار الثالث: الطيران للإنترنت لجلب محتوى جديد تمامًا وتصنيفه تلقائيًا
-    random.shuffle(ARABIC_APIS)
-    for api in ARABIC_APIS:
-        try:
-            res = requests.get(api, timeout=7)
-            if res.status_code == 200:
-                data = res.json()
-                text = data.get("quote") or data.get("text") or data.get("content")
-                
-                if text and text not in used and len(text) > 10:
-                    save_used_quote(text)
-                    category = classify_content(text)
-                    update_stats("api")
-                    return text, category, "live_api"
-        except:
-            continue
-
-    # في حال فشل الاتصال بالإنترنت تمامًا
-    fallback_text = random.choice(VIRAL_POSTS)
-    return fallback_text, "أقوال وحكم عميقة 🧠", "fallback"
+    # الخيار الثالث: اختيار بوست فيرال مميز غير مكرر
+    available_viral = [p for p in VIRAL_POSTS if p not in used]
+    if available_viral:
+        text = random.choice(available_viral)
+        save_used_quote(text)
+        return text, "أقوال وحكم عميقة 🧠", "static_viral"
+        
+    # ملجأ الطوارئ الأخير جداً
+    return random.choice(VIRAL_POSTS), "أقوال وحكم عميقة 🧠", "fallback"
 
 # ======================
-# 🎨 تنسيق البوست بالهيكل الذي تفضله
+# 🎨 تنسيق البوست بصيغة HTML الآمنة والمتوافقة
 # ======================
-
 def format_post(text, category):
     author = random.choice(AUTHORS)
-    return f"""🌟 *منشور جديد* 🌟
-
-“ {text.strip()} ”
-
-📌 *التصنيف:* {category}
-⭐ *المؤلف:* {author} ⭐"""
+    # تنظيف النصوص بالكامل من أي وسوم لعدم تخريب كود الـ HTML الخاص بتليجرام
+    clean_text = text.replace("<", "&lt;").replace(">", "&gt;").strip()
+    return f"🌟 <b>منشور جديد</b> 🌟\n\n“ <i>{clean_text}</i> ”\n\n📌 <b>التصنيف:</b> {category}\n⭐ <b>المؤلف:</b> {author} ⭐"
 
 # ======================
-# 📩 إرسال تيليجرام بالمفاتيح الجديدة للبوت الجديد
+# 📩 دالة الإرسال والتحديث (بمحاولات تكرار ذكية)
 # ======================
+def send_message_with_retry(token, chat_id, payload, max_retries=3):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = requests.post(url, data=payload, timeout=15)
+            if response.status_code == 200:
+                return True, response.text
+            print(f"⚠️ Attempt {attempt} failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt} error: {e}")
+        time.sleep(2)  # انتظار بسيط قبل إعادة المحاولة
+    return False, "All attempts failed"
 
 def send():
-    # تعديل لقراءة توكن ومعرف القناة للبوت الجديد من الـ Secrets بأسماء جديدة
     token = os.getenv("NEW_TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("NEW_TELEGRAM_CHAT_ID")
 
     if not token or not chat_id:
-        print("❌ Missing new env vars (NEW_TELEGRAM_BOT_TOKEN or NEW_TELEGRAM_CHAT_ID)")
+        print("❌ Error: NEW_TELEGRAM_BOT_TOKEN and NEW_TELEGRAM_CHAT_ID must be set in Environment Variables.")
         return
 
     content, category, ctype = pick_content()
+    
+    payload = {
+        "chat_id": chat_id,
+        "text": format_post(content, category),
+        "parse_mode": "HTML"
+    }
+    
+    # 1️⃣ البدء بإرسال الرسالة إلى تليجرام أولاً
+    success, log_msg = send_message_with_retry(token, chat_id, payload)
+    
+    if success:
+        print(f"✅ Success: Posted ({ctype}) successfully to channel!")
+    else:
+        print(f"❌ Failed: Could not send message. Telegram response: {log_msg}")
+        return # إلغاء تحديث الذاكرة إذا لم ينشر البوت شيئاً
 
-    requests.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        data={
-            "chat_id": chat_id,
-            "text": format_post(content, category),
-            "parse_mode": "Markdown"
-        }
-    )
-
-    print(f"✅ Sent ({ctype}) -> Category: {category}")
-
-# ======================
-# ⏰ توزيع ذكي للوقت
-# ======================
-
-def smart_sleep():
-    hour = time.localtime().tm_hour
-    if 18 <= hour <= 23:
-        return random.randint(170, 240)
-    if 12 <= hour < 18:
-        return random.randint(300, 480)
-    return random.randint(600, 900)
-
-# ======================
-# 🚀 تشغيل البوت المستمر
-# ======================
+    # 2️⃣ تحديث الذاكرة في جيت هوب بأمان بعد نجاح الإرسال
+    try:
+        os.system("git config --local user.email 'action@github.com'")
+        os.system("git config --local user.name 'GitHub Action'")
+        os.system("git add used_quotes.txt")
+        os.system("git commit -m '🔄 Update used quotes memory' --allow-empty")
+        os.system("git push")
+        print("💾 Memory successfully synchronized with GitHub Repository.")
+    except Exception as git_err:
+        print(f"⚠️ Git Sync Warning: Could not push changes to repository: {git_err}")
 
 if __name__ == "__main__":
-    print("🚀 FINAL BOSS BOT WITH LIVE WEB EXTENSION STARTED")
-    while True:
-        try:
-            send()
-        except Exception as e:
-            print("❌ ERROR:", e)
-        time.sleep(smart_sleep())
+    send()
